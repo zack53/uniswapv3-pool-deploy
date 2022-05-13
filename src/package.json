@@ -1,0 +1,30 @@
+{
+  "name": "Niftys Defi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@chainlink/contracts": "^0.4.0",
+    "@nomiclabs/hardhat-ethers": "^2.0.5",
+    "@nomiclabs/hardhat-etherscan": "^3.0.3",
+    "@nomiclabs/hardhat-truffle5": "^2.0.5",
+    "@openzeppelin/contracts": "^4.6.0",
+    "@truffle/hdwallet-provider": "^2.0.6",
+    "@uniswap/sdk-core": "^3.0.1",
+    "@uniswap/v3-periphery": "^1.4.1",
+    "axios": "^0.26.1",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
+    "hardhat": "^2.9.2",
+    "hardhat-gas-reporter": "^1.0.8",
+    "nodemon": "^2.0.15",
+    "web3": "^1.7.1"
+  }
+}
