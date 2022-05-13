@@ -1,5 +1,5 @@
-const { ethers, web3, network } = require("hardhat")
-const { UniSwapV3RouterAddress, UniSwapV3FactoryAddress, UniSwapV3FactoryABI, UniSwapPoolABI, UniSwapV3NPositionManagerAddress, UniSwapV3NPositionManagerABI } = config.EVMAddresses
+const { ethers, web3 } = require("hardhat")
+const { UniSwapV3FactoryAddress, UniSwapV3FactoryABI, UniSwapPoolABI, UniSwapV3NPositionManagerAddress, UniSwapV3NPositionManagerABI } = config.EVMAddresses
 const { calculateSqrtPriceX96 } = require('../util/TokenUtil')
 const { BigNumber } = require('bignumber.js')
 
@@ -11,14 +11,16 @@ const uniswapV3NPositionManager = new web3.eth.Contract(UniSwapV3NPositionManage
 async function main() {
   // Get needed accounts
   const accounts = await web3.eth.getAccounts()
+
+  // Variables for ERC20 and Pool deploy
   const totalBalance = BigNumber(1000).shiftedBy(18)
   const pairFee = 3000
 
-  // Get contract factory and deploy.
-  const NERC20 = await ethers.getContractFactory("TERC20")
-
-  t1ERC20Contract = await NERC20.deploy('Test1 ERC20', 'TS1', totalBalance.toFixed(0))
-  t2ERC20Contract = await NERC20.deploy('Test2 ERC20', 'TS2', totalBalance.toFixed(0))
+  // Get contract factory
+  const TERC20 = await ethers.getContractFactory("TERC20")
+  // Deploys two ERC20 tokens
+  t1ERC20Contract = await TERC20.deploy('Test1 ERC20', 'TS1', totalBalance.toFixed(0))
+  t2ERC20Contract = await TERC20.deploy('Test2 ERC20', 'TS2', totalBalance.toFixed(0))
   // Creates pool if doesn't already exist
   await uniswapV3NPositionManager.methods.createAndInitializePoolIfNecessary(t2ERC20Contract.address, t1ERC20Contract.address, pairFee, calculateSqrtPriceX96(50).toFixed(0)).send({ from: accounts[0] })
   // Gets the deployed Pool address for the Pair and creates a web3 contract
