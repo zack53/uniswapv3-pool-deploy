@@ -10,7 +10,7 @@ const { calculateSqrtPriceX96, calculatePriceFromX96 } = require('../util/TokenU
 const nERC20 = artifacts.require("TERC20")
 const UniSwapSingleSwap = artifacts.require("UniSwapSingleSwap")
 
-// Creates uniswap V3 Factory contract using web3
+// Creates uniswap V3 Factory  and Position Manager contract using web3
 const uniswapV3Factory = new web3.eth.Contract(UniSwapV3FactoryABI, UniSwapV3FactoryAddress)
 const uniswapV3NPositionManager = new web3.eth.Contract(UniSwapV3NPositionManagerABI, UniSwapV3NPositionManagerAddress)
 
@@ -31,7 +31,7 @@ describe("Uniswap Pool Deploy", function () {
     //Checks to see if the first account has ETH
     let balance = await web3.eth.getBalance(accounts[0])
     assert.notEqual(balance, 0)
-    //deploy contract
+    //deploy contracts
     t1ERC20Contract = await nERC20.new('Test1 ERC20', 'TS1', totalBalance)
     t2ERC20Contract = await nERC20.new('Test2 ERC20', 'TS2', totalBalance)
     //deploy UniSwap contract
@@ -71,43 +71,6 @@ describe("Uniswap Pool Deploy", function () {
     assert.equal(await t2ERC20Contract.decimals(), decimals)
   })
 
-  // it('Should deploy two tokens to new Uniswap V3 Pool', async function () {
-  //   // Creates the pool for the two test tokens
-  //   await uniswapV3Factory.methods.createPool(t1ERC20Contract.address, t2ERC20Contract.address, pairFee).send({ from: accounts[0] })
-  //   // Gets the deployed Pool address for the Pair and creates a web3 contract
-  //   deployedPairAddress = await uniswapV3Factory.methods.getPool(t1ERC20Contract.address, t2ERC20Contract.address, pairFee).call()
-  //   deployedPairContract = new web3.eth.Contract(UniSwapPoolABI, deployedPairAddress)
-  //   assert.notEqual(deployedPairAddress, undefined)
-
-  //   let slot0 = await deployedPairContract.methods.slot0().call()
-  //   assert.equal(slot0.unlocked, false)
-  // })
-
-  // it('Should initialize deployed pool sqrt price', async function () {
-  //   // Calculates initial sqrt Price x96 for pool
-  //   let price = 50
-  //   let sqrtPriceX96 = calculateSqrtPriceX96(price)
-  //   // Initializes the pool with sqrt price x96
-  //   await deployedPairContract.methods.initialize(sqrtPriceX96.toFixed(0)).send({ from: accounts[0] })
-  //   // Calls slot0 to ensure pool is unlocked and sqrt price matches what we initalized
-  //   let slot0 = await deployedPairContract.methods.slot0().call()
-  //   assert.equal(slot0.unlocked, true)
-  //   assert.equal(slot0.sqrtPriceX96.toString(), sqrtPriceX96.toFixed(0))
-  //   // Checks to ensure the sqrt math is working correctly
-  //   assert.equal(price.toFixed(8), calculatePriceFromX96(slot0.sqrtPriceX96.toString(), decimals, decimals).toFixed(8))
-
-  // })
-
-
-  // it('Should mint liquidity', async function () {
-  //   let slot0 = await deployedPairContract.methods.slot0().call()
-  //   console.log(slot0)
-  //   let tickLower = (slot0.tick / 2).toFixed(0)
-  //   let tickUpper = (slot0.tick * 1.5).toFixed(0)
-  //   deployedPairContract.methods.mint(accounts[0], tickLower, tickUpper, BigNumber(100).shiftedBy(decimals).toFixed(0), '')
-  //   console.log(await deployedPairContract.methods.slot0().call())
-  // })
-
   it('Should initialize if the pool does not exist', async function () {
     // Creates pool if doesn't already exist
     await uniswapV3NPositionManager.methods.createAndInitializePoolIfNecessary(t2ERC20Contract.address, t1ERC20Contract.address, pairFee, calculateSqrtPriceX96(50).toFixed(0)).send({ from: accounts[0] })
@@ -118,28 +81,35 @@ describe("Uniswap Pool Deploy", function () {
     console.log(deployedPairAddress)
   })
 
-  it('Should provide liquidity to pool', async function () {
-    let slot0 = await deployedPairContract.methods.slot0().call()
-    let tickLower = (slot0.tick / 2).toFixed(0)
-    let tickUpper = (slot0.tick * 1.5).toFixed(0)
-    let token0 = await deployedPairContract.methods.token0().call()
-    let token1 = await deployedPairContract.methods.token1().call()
-    let params = {
-      token0: token0,
-      token1: token1,
-      fee: pairFee,
-      tickLower: tickLower,
-      tickUpper: tickUpper,
-      amount0Desired: 500,
-      amount1Desired: 1,
-      amount0Min: 0,
-      amount1Min: 0,
-      recipient: accounts[0],
-      deadline: 5000000000
-    }
-    await t1ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(20).shiftedBy(decimals).toFixed(0))
-    await t2ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(20).shiftedBy(decimals).toFixed(0))
-    await uniswapV3NPositionManager.methods.mint(params).send({ from: accounts[0] })
-  })
+  /**
+   * Currently working on implementing automated method of providing liquidity
+   */
+  // it('Should provide liquidity to pool', async function () {
+  //   let slot0 = await deployedPairContract.methods.slot0().call()
+  //   let tickLower = (slot0.tick / 2).toFixed(0)
+  //   let tickUpper = (slot0.tick * 1.5).toFixed(0)
+  //   let token0 = await deployedPairContract.methods.token0().call()
+  //   let token1 = await deployedPairContract.methods.token1().call()
+  //   let params = {
+  //     token0: token0,
+  //     token1: token1,
+  //     fee: pairFee,
+  //     tickLower: -887272,
+  //     tickUpper: 887272,
+  //     amount0Desired: BigNumber(100).shiftedBy(decimals).toFixed(0),
+  //     amount1Desired: BigNumber(2).shiftedBy(decimals).toFixed(0),
+  //     amount0Min: 0,
+  //     amount1Min: 0,
+  //     recipient: accounts[0],
+  //     deadline: 5000000000
+  //   }
+  //   await t1ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(1000).shiftedBy(decimals).toFixed(0))
+  //   await t2ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(1000).shiftedBy(decimals).toFixed(0))
+  //   await uniswapV3NPositionManager.methods.mint(params).send({ from: accounts[0] })
+  // })
+
+  /**
+   * TODO: Implement trades using the pool once liquidity has been provided for testing
+   */
 })
 
