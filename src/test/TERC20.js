@@ -16,8 +16,6 @@ const uniswapV3NPositionManager = new web3.eth.Contract(UniSwapV3NPositionManage
 
 
 const decimals = 18
-const TICK_MAX = 887272
-const TICK_MIN = -887272
 let t1ERC20Contract
 let t2ERC20Contract
 let accounts
