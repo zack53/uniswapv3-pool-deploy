@@ -16,6 +16,8 @@ const uniswapV3NPositionManager = new web3.eth.Contract(UniSwapV3NPositionManage
 
 
 const decimals = 18
+const TICK_MAX = 887272
+const TICK_MIN = -887272
 let t1ERC20Contract
 let t2ERC20Contract
 let accounts
@@ -72,41 +74,44 @@ describe("Uniswap Pool Deploy", function () {
   })
 
   it('Should initialize if the pool does not exist', async function () {
+    let erc20Address = [t1ERC20Contract.address, t2ERC20Contract.address]
+    erc20Address = erc20Address.sort()
     // Creates pool if doesn't already exist
-    await uniswapV3NPositionManager.methods.createAndInitializePoolIfNecessary(t2ERC20Contract.address, t1ERC20Contract.address, pairFee, calculateSqrtPriceX96(50).toFixed(0)).send({ from: accounts[0] })
+    await uniswapV3NPositionManager.methods.createAndInitializePoolIfNecessary(erc20Address[0], erc20Address[1], pairFee, calculateSqrtPriceX96(1).toFixed(0)).send({ from: accounts[0] })
     // Gets the deployed Pool address for the Pair and creates a web3 contract
-    deployedPairAddress = await uniswapV3Factory.methods.getPool(t1ERC20Contract.address, t2ERC20Contract.address, pairFee).call()
+
+    deployedPairAddress = await uniswapV3Factory.methods.getPool(erc20Address[0], erc20Address[1], pairFee).call()
     deployedPairContract = new web3.eth.Contract(UniSwapPoolABI, deployedPairAddress)
     assert.notEqual(deployedPairAddress, undefined)
-    console.log(deployedPairAddress)
   })
 
   /**
    * Currently working on implementing automated method of providing liquidity
    */
-  // it('Should provide liquidity to pool', async function () {
-  //   let slot0 = await deployedPairContract.methods.slot0().call()
-  //   let tickLower = (slot0.tick / 2).toFixed(0)
-  //   let tickUpper = (slot0.tick * 1.5).toFixed(0)
-  //   let token0 = await deployedPairContract.methods.token0().call()
-  //   let token1 = await deployedPairContract.methods.token1().call()
-  //   let params = {
-  //     token0: token0,
-  //     token1: token1,
-  //     fee: pairFee,
-  //     tickLower: -887272,
-  //     tickUpper: 887272,
-  //     amount0Desired: BigNumber(100).shiftedBy(decimals).toFixed(0),
-  //     amount1Desired: BigNumber(2).shiftedBy(decimals).toFixed(0),
-  //     amount0Min: 0,
-  //     amount1Min: 0,
-  //     recipient: accounts[0],
-  //     deadline: 5000000000
-  //   }
-  //   await t1ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(1000).shiftedBy(decimals).toFixed(0))
-  //   await t2ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(1000).shiftedBy(decimals).toFixed(0))
-  //   await uniswapV3NPositionManager.methods.mint(params).send({ from: accounts[0] })
-  // })
+  it('Should provide liquidity to pool', async function () {
+    let slot0 = await deployedPairContract.methods.slot0().call()
+    let tickSpacing = parseInt(await deployedPairContract.methods.tickSpacing().call())
+    let token0 = await deployedPairContract.methods.token0().call()
+    let token1 = await deployedPairContract.methods.token1().call()
+    let params = {
+      token0: token0,
+      token1: token1,
+      fee: pairFee,
+      tickLower: parseInt(slot0.tick) - tickSpacing * 2,
+      tickUpper: parseInt(slot0.tick) + tickSpacing * 2,
+      amount0Desired: 10,
+      amount1Desired: 10,
+      amount0Min: 0,
+      amount1Min: 0,
+      recipient: accounts[0],
+      deadline: 5000000000
+    }
+
+    console.log(params)
+    await t1ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(1000).shiftedBy(decimals).toFixed(0), { from: accounts[0] })
+    await t2ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(1000).shiftedBy(decimals).toFixed(0), { from: accounts[0] })
+    await uniswapV3NPositionManager.methods.mint(params).send({ from: accounts[0] })
+  })
 
   /**
    * TODO: Implement trades using the pool once liquidity has been provided for testing
