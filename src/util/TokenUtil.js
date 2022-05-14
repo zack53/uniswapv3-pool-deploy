@@ -93,7 +93,7 @@ module.exports = {
     },
 
     calculateSqrtPriceX96: (price) => {
-        price = BigNumber(50)
+        price = BigNumber(price)
         ratioX96 = price.multipliedBy(Q192)
         sqrtPriceX96 = ratioX96.sqrt()
         return sqrtPriceX96

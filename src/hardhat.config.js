@@ -7,22 +7,35 @@ require("dotenv").config()
 
 module.exports = {
   solidity: {
-    version: "0.8.10",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 1000
+    compilers: [
+      {
+        version: "0.8.10",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000
+          }
+        }
+      },
+      {
+        version: "0.7.6",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000
+          }
+        }
       }
-    }
+    ],
   },
   networks: {
     hardhat: {
       mining: {
         auto: true,
-        interval: [7000, 14000]
+        interval: [3000, 7000]
       },
       forking: {
-        url: process.env.RINKEBY_URL,
+        url: process.env.ETH_MAINNET_URL,
       },
       accounts: [{ privateKey: process.env.PRIVATE_KEY_1, balance: '1000000000000000000000' }, { privateKey: process.env.PRIVATE_KEY_2, balance: '1000000000000000000000' }, { privateKey: process.env.PRIVATE_KEY_3, balance: '1000000000000000000000' }]
     },
