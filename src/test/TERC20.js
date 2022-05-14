@@ -89,10 +89,13 @@ describe("Uniswap Pool Deploy", function () {
    * Currently working on implementing automated method of providing liquidity
    */
   it('Should provide liquidity to pool', async function () {
+    // Get tick and tick spacing
     let slot0 = await deployedPairContract.methods.slot0().call()
     let tickSpacing = parseInt(await deployedPairContract.methods.tickSpacing().call())
+    // Get correct token order for deployed contract pair
     let token0 = await deployedPairContract.methods.token0().call()
     let token1 = await deployedPairContract.methods.token1().call()
+    // Params needed for mint
     let params = {
       token0: token0,
       token1: token1,
@@ -106,8 +109,6 @@ describe("Uniswap Pool Deploy", function () {
       recipient: accounts[0],
       deadline: 5000000000
     }
-
-    console.log(params)
     await t1ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(1000).shiftedBy(decimals).toFixed(0), { from: accounts[0] })
     await t2ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(1000).shiftedBy(decimals).toFixed(0), { from: accounts[0] })
     await uniswapV3NPositionManager.methods.mint(params).send({ from: accounts[0] })
