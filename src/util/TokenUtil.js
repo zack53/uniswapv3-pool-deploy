@@ -92,8 +92,8 @@ module.exports = {
         });
     },
 
-    calculateSqrtPriceX96: (price) => {
-        price = BigNumber(price)
+    calculateSqrtPriceX96: (price, token0Dec, token1Dec) => {
+        price = BigNumber(price).shiftedBy(token1Dec - token0Dec)
         ratioX96 = price.multipliedBy(Q192)
         sqrtPriceX96 = ratioX96.sqrt()
         return sqrtPriceX96
