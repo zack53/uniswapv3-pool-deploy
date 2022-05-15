@@ -80,9 +80,6 @@ describe("Uniswap Pool Deploy", function () {
     assert.notEqual(deployedPairAddress, undefined)
   })
 
-  /**
-   * Currently working on implementing automated method of providing liquidity
-   */
   it('Should provide liquidity to pool', async function () {
     // Get tick and tick spacing
     let slot0 = await deployedPairContract.methods.slot0().call()
