@@ -8,7 +8,6 @@ const { calculateSqrtPriceX96, calculatePriceFromX96 } = require('../util/TokenU
 
 // Creates a truffe contract from compiled artifacts.
 const nERC20 = artifacts.require("TERC20")
-const UniSwapSingleSwap = artifacts.require("UniSwapSingleSwap")
 
 // Creates uniswap V3 Factory  and Position Manager contract using web3
 const uniswapV3Factory = new web3.eth.Contract(UniSwapV3FactoryABI, UniSwapV3FactoryAddress)
@@ -35,9 +34,6 @@ describe("Uniswap Pool Deploy", function () {
     //deploy contracts
     t1ERC20Contract = await nERC20.new('Test1 ERC20', 'TS1', totalBalance)
     t2ERC20Contract = await nERC20.new('Test2 ERC20', 'TS2', totalBalance)
-    //deploy UniSwap contract
-    uniSwapSingleSwap = await UniSwapSingleSwap.new(UniSwapV3RouterAddress)
-
   })
 
   it("Should deploy with the name Test1 ERC20", async function () {
