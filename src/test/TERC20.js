@@ -2,7 +2,7 @@
 // The link above is a good resource for everything related to truffle contracts.
 
 const { web3, assert, network } = require("hardhat")
-const { UniSwapV3RouterAddress, UniSwapV3FactoryAddress, UniSwapV3FactoryABI, UniSwapPoolABI, UniSwapV3NPositionManagerAddress, UniSwapV3NPositionManagerABI } = config.EVMAddresses
+const { UniSwapV3RouterAddress, UniSwapV3RouterABI, UniSwapV3FactoryAddress, UniSwapV3FactoryABI, UniSwapPoolABI, UniSwapV3NPositionManagerAddress, UniSwapV3NPositionManagerABI } = config.EVMAddresses
 const { BigNumber } = require('bignumber.js')
 const { calculateSqrtPriceX96, calculatePriceFromX96 } = require('../util/TokenUtil')
 
@@ -13,6 +13,7 @@ const UniSwapSingleSwap = artifacts.require("UniSwapSingleSwap")
 // Creates uniswap V3 Factory  and Position Manager contract using web3
 const uniswapV3Factory = new web3.eth.Contract(UniSwapV3FactoryABI, UniSwapV3FactoryAddress)
 const uniswapV3NPositionManager = new web3.eth.Contract(UniSwapV3NPositionManagerABI, UniSwapV3NPositionManagerAddress)
+const uniswapV3Router = new web3.eth.Contract(UniSwapV3RouterABI, UniSwapV3RouterAddress)
 
 
 const decimals = 18
@@ -75,7 +76,7 @@ describe("Uniswap Pool Deploy", function () {
     let erc20Address = [t1ERC20Contract.address, t2ERC20Contract.address]
     erc20Address = erc20Address.sort()
     // Creates pool if doesn't already exist
-    await uniswapV3NPositionManager.methods.createAndInitializePoolIfNecessary(erc20Address[0], erc20Address[1], pairFee, calculateSqrtPriceX96(1).toFixed(0)).send({ from: accounts[0] })
+    await uniswapV3NPositionManager.methods.createAndInitializePoolIfNecessary(erc20Address[0], erc20Address[1], pairFee, calculateSqrtPriceX96(1, decimals, decimals).toFixed(0)).send({ from: accounts[0] })
     // Gets the deployed Pool address for the Pair and creates a web3 contract
 
     deployedPairAddress = await uniswapV3Factory.methods.getPool(erc20Address[0], erc20Address[1], pairFee).call()
@@ -98,22 +99,47 @@ describe("Uniswap Pool Deploy", function () {
       token0: token0,
       token1: token1,
       fee: pairFee,
-      tickLower: parseInt(slot0.tick) - tickSpacing * 2,
-      tickUpper: parseInt(slot0.tick) + tickSpacing * 2,
-      amount0Desired: 10,
-      amount1Desired: 10,
+      tickLower: parseInt(slot0.tick) - tickSpacing * 10,
+      tickUpper: parseInt(slot0.tick) + tickSpacing * 10,
+      amount0Desired: BigNumber(500).shiftedBy(decimals).toFixed(0),
+      amount1Desired: BigNumber(500).shiftedBy(decimals).toFixed(0),
       amount0Min: 0,
       amount1Min: 0,
       recipient: accounts[0],
       deadline: 5000000000
     }
-    await t1ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(1000).shiftedBy(decimals).toFixed(0), { from: accounts[0] })
-    await t2ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(1000).shiftedBy(decimals).toFixed(0), { from: accounts[0] })
+    await t1ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(500).shiftedBy(decimals).toFixed(0), { from: accounts[0] })
+    await t2ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(500).shiftedBy(decimals).toFixed(0), { from: accounts[0] })
     await uniswapV3NPositionManager.methods.mint(params).send({ from: accounts[0] })
   })
 
-  /**
-   * TODO: Implement trades using the pool once liquidity has been provided for testing
-   */
+  it('Should implement a swap on newly created pool', async function () {
+    // Params needed for Uniswap trade
+    let params = {
+      tokenIn: t1ERC20Contract.address,
+      tokenOut: t2ERC20Contract.address,
+      fee: pairFee,
+      recipient: accounts[0],
+      deadline: 50000000000,
+      amountIn: BigNumber(20).shiftedBy(decimals).toFixed(0),
+      amountOutMinimum: 0,
+      sqrtPriceLimitX96: 0
+    }
+    // Balance before converted to human readable number
+    let bal1Before = BigNumber(await t1ERC20Contract.balanceOf(accounts[0])).shiftedBy(-decimals).toNumber()
+    let bal2Before = BigNumber(await t2ERC20Contract.balanceOf(accounts[0])).shiftedBy(-decimals).toNumber()
+
+    // Approve token spend and call trade on Uniswap router
+    await t1ERC20Contract.approve(UniSwapV3RouterAddress, BigNumber(20).shiftedBy(decimals).toFixed(0))
+    await uniswapV3Router.methods.exactInputSingle(params).send({ from: accounts[0] })
+
+    // Balance after converted to human readable number
+    let bal1 = BigNumber(await t1ERC20Contract.balanceOf(accounts[0])).shiftedBy(-decimals).toNumber()
+    let bal2 = BigNumber(await t2ERC20Contract.balanceOf(accounts[0])).shiftedBy(-decimals).toNumber()
+
+    // Checks to ensure balances have been adjusted in the right direction.
+    assert.isBelow(bal1, bal1Before)
+    assert.isAbove(bal2, bal2Before)
+  })
 })
 
