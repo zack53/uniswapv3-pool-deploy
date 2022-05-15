@@ -71,10 +71,11 @@ describe("Uniswap Pool Deploy", function () {
   it('Should initialize if the pool does not exist', async function () {
     let erc20Address = [t1ERC20Contract.address, t2ERC20Contract.address]
     erc20Address = erc20Address.sort()
+
     // Creates pool if doesn't already exist
     await uniswapV3NPositionManager.methods.createAndInitializePoolIfNecessary(erc20Address[0], erc20Address[1], pairFee, calculateSqrtPriceX96(1, decimals, decimals).toFixed(0)).send({ from: accounts[0] })
-    // Gets the deployed Pool address for the Pair and creates a web3 contract
 
+    // Gets the deployed Pool address for the Pair and creates a web3 contract
     deployedPairAddress = await uniswapV3Factory.methods.getPool(erc20Address[0], erc20Address[1], pairFee).call()
     deployedPairContract = new web3.eth.Contract(UniSwapPoolABI, deployedPairAddress)
     assert.notEqual(deployedPairAddress, undefined)
@@ -84,9 +85,11 @@ describe("Uniswap Pool Deploy", function () {
     // Get tick and tick spacing
     let slot0 = await deployedPairContract.methods.slot0().call()
     let tickSpacing = parseInt(await deployedPairContract.methods.tickSpacing().call())
+
     // Get correct token order for deployed contract pair
     let token0 = await deployedPairContract.methods.token0().call()
     let token1 = await deployedPairContract.methods.token1().call()
+
     // Params needed for mint
     let params = {
       token0: token0,
@@ -101,6 +104,8 @@ describe("Uniswap Pool Deploy", function () {
       recipient: accounts[0],
       deadline: 5000000000
     }
+
+    // Approves token to be pulled and calls mint method
     await t1ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(500).shiftedBy(decimals).toFixed(0), { from: accounts[0] })
     await t2ERC20Contract.approve(UniSwapV3NPositionManagerAddress, BigNumber(500).shiftedBy(decimals).toFixed(0), { from: accounts[0] })
     await uniswapV3NPositionManager.methods.mint(params).send({ from: accounts[0] })
