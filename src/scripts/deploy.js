@@ -21,9 +21,11 @@ async function main() {
   // Deploys two ERC20 tokens
   t1ERC20Contract = await TERC20.deploy('Test1 ERC20', 'TS1', totalBalance.toFixed(0))
   t2ERC20Contract = await TERC20.deploy('Test2 ERC20', 'TS2', totalBalance.toFixed(0))
+  let erc20Address = [t1ERC20Contract.address, t2ERC20Contract.address]
+  erc20Address = erc20Address.sort()
   // Creates pool if doesn't already exist
   // This will fail if token addresses are not ordered properly
-  await uniswapV3NPositionManager.methods.createAndInitializePoolIfNecessary(t2ERC20Contract.address, t1ERC20Contract.address, pairFee, calculateSqrtPriceX96(50).toFixed(0)).send({ from: accounts[0] })
+  await uniswapV3NPositionManager.methods.createAndInitializePoolIfNecessary(erc20Address[0], erc20Address[1], pairFee, calculateSqrtPriceX96(50).toFixed(0)).send({ from: accounts[0] })
   // Gets the deployed Pool address for the Pair and creates a web3 contract
   deployedPairAddress = await uniswapV3Factory.methods.getPool(t1ERC20Contract.address, t2ERC20Contract.address, pairFee).call()
   deployedPairContract = new web3.eth.Contract(UniSwapPoolABI, deployedPairAddress)
