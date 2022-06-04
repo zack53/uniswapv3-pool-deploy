@@ -106,6 +106,23 @@ module.exports = {
         let price = ratioX96.dividedBy(Q192)
         price = price.shiftedBy(token0Dec - token1Dec)
         return price
+    },
+
+    getNearestUsableTick: (currentTick,space) => {
+        // 0 is always a valid tick
+        if(currentTick == 0){
+            return 0
+        }
+        // Determines direction
+        direction = (currentTick >= 0) ? 1 : -1
+        // Changes direction
+        currentTick *= direction
+        // Calculates nearest tick based on how close the current tick remainder is to space / 2
+        nearestTick = (currentTick%space <= space/2) ? currentTick - (currentTick%space) : currentTick + (space-(currentTick%space))
+        // Changes direction back
+        nearestTick *= direction
+        
+        return nearestTick
     }
 
 }
