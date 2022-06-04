@@ -4,7 +4,7 @@
 const { web3, assert, network } = require("hardhat")
 const { UniSwapV3RouterAddress, UniSwapV3RouterABI, UniSwapV3FactoryAddress, UniSwapV3FactoryABI, UniSwapPoolABI, UniSwapV3NPositionManagerAddress, UniSwapV3NPositionManagerABI } = config.EVMAddresses
 const { BigNumber } = require('bignumber.js')
-const { calculateSqrtPriceX96, calculatePriceFromX96 } = require('../util/TokenUtil')
+const { calculateSqrtPriceX96, calculatePriceFromX96, getNearestUsableTick } = require('../util/TokenUtil')
 
 // Creates a truffe contract from compiled artifacts.
 const nERC20 = artifacts.require("TERC20")
@@ -71,6 +71,14 @@ describe("Uniswap Pool Deploy", function () {
   it('Should initialize if the pool does not exist', async function () {
     let erc20Address = [t1ERC20Contract.address, t2ERC20Contract.address]
     erc20Address = erc20Address.sort()
+    let price = 50
+    let sqrtPrice
+    // Determine price based on token positions
+    if(erc20Address[0] == t1ERC20Contract.address){
+      sqrtPrice = calculateSqrtPriceX96(price, decimals,decimals)
+    }else{
+      sqrtPrice = calculateSqrtPriceX96(1/price, decimals,decimals)
+    }
 
     // Creates pool if doesn't already exist
     await uniswapV3NPositionManager.methods.createAndInitializePoolIfNecessary(erc20Address[0], erc20Address[1], pairFee, calculateSqrtPriceX96(1, decimals, decimals).toFixed(0)).send({ from: accounts[0] })
@@ -89,20 +97,21 @@ describe("Uniswap Pool Deploy", function () {
     // Get correct token order for deployed contract pair
     let token0 = await deployedPairContract.methods.token0().call()
     let token1 = await deployedPairContract.methods.token1().call()
+    let nearestTick = getNearestUsableTick(parseInt(slot0.tick),tickSpacing)
 
     // Params needed for mint
     let params = {
       token0: token0,
       token1: token1,
       fee: pairFee,
-      tickLower: parseInt(slot0.tick) - tickSpacing * 10,
-      tickUpper: parseInt(slot0.tick) + tickSpacing * 10,
+      tickLower: nearestTick - tickSpacing * 10,
+      tickUpper: nearestTick + tickSpacing * 10,
       amount0Desired: BigNumber(500).shiftedBy(decimals).toFixed(0),
       amount1Desired: BigNumber(500).shiftedBy(decimals).toFixed(0),
       amount0Min: 0,
       amount1Min: 0,
       recipient: accounts[0],
-      deadline: 5000000000
+      deadline: Math.floor(Date.now() / 1000) + 20
     }
 
     // Approves token to be pulled and calls mint method
@@ -118,7 +127,7 @@ describe("Uniswap Pool Deploy", function () {
       tokenOut: t2ERC20Contract.address,
       fee: pairFee,
       recipient: accounts[0],
-      deadline: 50000000000,
+      deadline: Math.floor(Date.now() / 1000) + 20,
       amountIn: BigNumber(20).shiftedBy(decimals).toFixed(0),
       amountOutMinimum: 0,
       sqrtPriceLimitX96: 0
